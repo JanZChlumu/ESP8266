@@ -1,29 +1,5 @@
-/**************************************************************
-   Blynk is a platform with iOS and Android apps to control
-   Arduino, Raspberry Pi and the likes over the Internet.
-   You can easily build graphic interfaces for all your
-   projects by simply dragging and dropping widgets.
+#include <SimpleTimer.h>
 
-     Downloads, docs, tutorials: http://www.blynk.cc
-     Blynk community:            http://community.blynk.cc
-     Social networks:            http://www.fb.com/blynkapp
-                                 http://twitter.com/blynk_app
-
-   Blynk library is licensed under MIT license
-   This example code is in public domain.
-
- **************************************************************
-   This example runs directly on ESP8266 chip.
-
-   You need to install this for ESP8266 development:
-     https://github.com/esp8266/Arduino
-
-   Please be sure to select the right ESP8266 module
-   in the Tools -> Board menu!
-
-   Change WiFi ssid, pass, and Blynk auth token to run :)
-
- **************************************************************/
 
 #define BLYNK_PRINT Serial    // Comment this out to disable prints and save space
 #include <ESP8266WiFi.h>
@@ -33,7 +9,7 @@
 
 // You should get Auth Token in the Blynk App.
 // Go to the Project Settings (nut icon).
-char auth[] = "YourAuthToken";
+char auth[] = "8ecd574ffc1343ffb2a6c57a7279e3cf";
 
 #define DHTPIN 2          // What digital pin we're connected to
 // Uncomment whatever type you're using!
@@ -41,16 +17,20 @@ char auth[] = "YourAuthToken";
 //#define DHTTYPE DHT22   // DHT 22, AM2302, AM2321
 //#define DHTTYPE DHT21   // DHT 21, AM2301
 
-#define RELEPIN 3
+#define RELEPIN 5
 
 /******Blobal Variables**************/
 // Your WiFi credentials.
 // Set password to "" for open networks.
-char ssid[] = "YourNetworkName";
-char pass[] = "YourPassword";
+char ssid[] = "Yak-Yak";
+char pass[] = "beruskak";
 
 int iSlider = 0;
 float h = 0; //vlhkost
+// Keep this flag not to re-sync on every reconnection
+bool isFirstConnect = true;
+bool isTimerOn = false;
+bool isManualOn = false;
 /***************************************/
 //------Created classes-----------
 DHT dht(DHTPIN, DHTTYPE);
@@ -73,6 +53,29 @@ void sendSensor()
   // Please don't send more that 10 values per second.
   Blynk.virtualWrite(V5, h);
   Blynk.virtualWrite(V6, t);
+
+  //Serial.println(isTimerOn);
+
+
+
+  if (((   (int)h < iSlider) & isTimerOn)     |    isManualOn )
+  {
+    digitalWrite(RELEPIN, HIGH);
+    led1.on();
+//    isManualOn = true;
+
+  Blynk.virtualWrite(V3, 1);
+
+  } else
+  {
+    digitalWrite(RELEPIN, LOW);
+    led1.off();
+  //  isManualOn = false;
+  
+  Blynk.virtualWrite(V3, 0);
+  }
+
+
 }
 
 
@@ -102,24 +105,22 @@ BLYNK_WRITE(V0)
 
   if (param.asInt() == 1)
   {
-    h = dht.readHumidity();
-    if (!isnan(h)) // ...kdyz nenastala chyba cteni dat...
-    {
-      if ((int)h < iSlider)
-      {
-        digitalWrite(RELEPIN, HIGH);
-      } else
-      {
-        digitalWrite(RELEPIN, LOW);
-      }
-    }
+    isTimerOn = true;
   }
+  else
+  {
+    isTimerOn = false;
+  }
+  /* */
+
 }
 
 //****slider
 BLYNK_WRITE(V1)
 {
   iSlider = param.asInt();
+  Serial.print("slider: ");
+  Serial.println(iSlider);
 }
 
 //*** tlacitko
@@ -127,13 +128,25 @@ BLYNK_WRITE(V3)
 {
   if (param.asInt() == 1)
   {
-    digitalWrite(RELEPIN, HIGH);
-    led1.on();
+    isManualOn = true;
   }
   else
   {
-    digitalWrite(RELEPIN, LOW);
-    led1.off();
+    isManualOn = false;
+  }
+}
+
+
+// This function will run every time Blynk connection is established
+BLYNK_CONNECTED() {
+  if (isFirstConnect) {
+    // Request Blynk server to re-send latest values for all pins
+    Blynk.syncAll();
+
+    // You can also update an individual Virtual pin like this:
+    //Blynk.syncVirtual(V0);
+
+    isFirstConnect = false;
   }
 }
 
@@ -142,4 +155,3 @@ void loop()
   Blynk.run(); // Initiates Blynk
   timer.run(); // Initiates SimpleTimer
 }
-
