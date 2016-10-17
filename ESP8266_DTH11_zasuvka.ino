@@ -42,22 +42,21 @@ char auth[] = "YourAuthToken";
 //#define DHTTYPE DHT21   // DHT 21, AM2301
 
 #define RELEPIN 3
-char CASOVAC_PORT[] = "V0";
 
+/******Blobal Variables**************/
 // Your WiFi credentials.
 // Set password to "" for open networks.
 char ssid[] = "YourNetworkName";
 char pass[] = "YourPassword";
 
+int iSlider = 0;
+float h = 0; //vlhkost
+/***************************************/
+//------Created classes-----------
 DHT dht(DHTPIN, DHTTYPE);
 SimpleTimer timer;
-
-int iSlider = 0;
-float h = 0;
-
 WidgetLED led1(V2);
-/***************************************/
-
+//--------------------------------
 // This function sends Arduino's up time every second to Virtual Pin (5).
 // In the app, Widget's reading frequency should be set to PUSH. This means
 // that you define how often to send data to Blynk App.
