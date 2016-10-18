@@ -54,28 +54,23 @@ void sendSensor()
   Blynk.virtualWrite(V5, h);
   Blynk.virtualWrite(V6, t);
 
-  //Serial.println(isTimerOn);
-
-
+  Serial.print("isTimerOn: ")
+  Serial.println(isTimerOn);
 
   if (((   (int)h < iSlider) & isTimerOn)     |    isManualOn )
   {
     digitalWrite(RELEPIN, HIGH);
     led1.on();
-//    isManualOn = true;
-
-  Blynk.virtualWrite(V3, 1);
-
-  } else
+      if (isManualOn == false)
+      {
+        Blynk.virtualWrite(V3, true);
+      }
+  } 
+  else
   {
     digitalWrite(RELEPIN, LOW);
     led1.off();
-  //  isManualOn = false;
-  
-  Blynk.virtualWrite(V3, 0);
   }
-
-
 }
 
 
@@ -111,8 +106,6 @@ BLYNK_WRITE(V0)
   {
     isTimerOn = false;
   }
-  /* */
-
 }
 
 //****slider
@@ -129,10 +122,12 @@ BLYNK_WRITE(V3)
   if (param.asInt() == 1)
   {
     isManualOn = true;
+    Serial.println("BLYNK_WRITE - tlacitko: ON");
   }
   else
   {
     isManualOn = false;
+    Serial.println("BLYNK_WRITE - tlacitko: OFF");
   }
 }
 
@@ -142,10 +137,8 @@ BLYNK_CONNECTED() {
   if (isFirstConnect) {
     // Request Blynk server to re-send latest values for all pins
     Blynk.syncAll();
-
     // You can also update an individual Virtual pin like this:
     //Blynk.syncVirtual(V0);
-
     isFirstConnect = false;
   }
 }
