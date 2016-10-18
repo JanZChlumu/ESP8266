@@ -1,11 +1,17 @@
 #include <SimpleTimer.h>
-
-
-#define BLYNK_PRINT Serial    // Comment this out to disable prints and save space
 #include <ESP8266WiFi.h>
 #include <BlynkSimpleEsp8266.h>
 #include <DHT.h>
 #include <SimpleTimer.h>
+
+#define BLYNK_PRINT Serial    // Comment this out to disable prints and save space
+#define DEBUG_SERIAL_PRINT  // Uncomment enagle Serial monitor information
+
+#ifdef DEBUG_SERIAL_PRINT
+  #define DEBUG
+#else
+  #define DEBUG //
+#endif
 
 // You should get Auth Token in the Blynk App.
 // Go to the Project Settings (nut icon).
@@ -16,6 +22,7 @@ char auth[] = "8ecd574ffc1343ffb2a6c57a7279e3cf";
 #define DHTTYPE DHT11     // DHT 11
 //#define DHTTYPE DHT22   // DHT 22, AM2302, AM2321
 //#define DHTTYPE DHT21   // DHT 21, AM2301
+
 
 #define RELEPIN 5
 
@@ -30,7 +37,6 @@ float h = 0; //vlhkost
 // Keep this flag not to re-sync on every reconnection
 bool isFirstConnect = true;
 bool isTimerOn = false;
-bool isManualOn = false;
 /***************************************/
 //------Created classes-----------
 DHT dht(DHTPIN, DHTTYPE);
@@ -46,7 +52,7 @@ void sendSensor()
   float t = dht.readTemperature(); // or dht.readTemperature(true) for Fahrenheit
 
   if (isnan(h) || isnan(t)) {
-    Serial.println("Failed to read from DHT sensor!");
+    DEBUG Serial.println("Failed to read from DHT sensor!");
     return;
   }
   // You can send any value at any time.
@@ -54,18 +60,14 @@ void sendSensor()
   Blynk.virtualWrite(V5, h);
   Blynk.virtualWrite(V6, t);
 
-  Serial.print("isTimerOn: ")
-  Serial.println(isTimerOn);
+  DEBUG Serial.print("isTimerOn: ");
+  DEBUG Serial.println(isTimerOn);
 
-  if (((   (int)h < iSlider) & isTimerOn)     |    isManualOn )
+  if (( (int)h < iSlider) & isTimerOn)
   {
     digitalWrite(RELEPIN, HIGH);
     led1.on();
-      if (isManualOn == false)
-      {
-        Blynk.virtualWrite(V3, true);
-      }
-  } 
+  }
   else
   {
     digitalWrite(RELEPIN, LOW);
@@ -73,19 +75,15 @@ void sendSensor()
   }
 }
 
-
 void setup()
 {
-  Serial.begin(9600);
+  DEBUG Serial.begin(9600);
   Blynk.begin(auth, ssid, pass);
   pinMode(RELEPIN, OUTPUT);
   digitalWrite(RELEPIN, LOW);
-
   dht.begin();
-
   // Setup a function to be called every second
   timer.setInterval(1000L, sendSensor);
-
 }
 
 //****casovac
@@ -95,8 +93,8 @@ BLYNK_WRITE(V0)
   // this method will be triggered every day
   // until you remove widget or stop project or
   // clean stop/start fields of widget
-  Serial.print("Stav casovace: ");
-  Serial.println(param.asStr());
+  DEBUG Serial.print("Stav casovace: ");
+  DEBUG Serial.println(param.asStr());
 
   if (param.asInt() == 1)
   {
@@ -112,8 +110,8 @@ BLYNK_WRITE(V0)
 BLYNK_WRITE(V1)
 {
   iSlider = param.asInt();
-  Serial.print("slider: ");
-  Serial.println(iSlider);
+  DEBUG Serial.print("slider: ");
+  DEBUG Serial.println(iSlider);
 }
 
 //*** tlacitko
@@ -121,13 +119,15 @@ BLYNK_WRITE(V3)
 {
   if (param.asInt() == 1)
   {
-    isManualOn = true;
-    Serial.println("BLYNK_WRITE - tlacitko: ON");
+    digitalWrite(RELEPIN, HIGH);
+    led1.on();
+    DEBUG Serial.println("BLYNK_WRITE - tlacitko: ON");
   }
   else
   {
-    isManualOn = false;
-    Serial.println("BLYNK_WRITE - tlacitko: OFF");
+    digitalWrite(RELEPIN, LOW);
+    led1.off();
+    DEBUG Serial.println("BLYNK_WRITE - tlacitko: OFF");
   }
 }
 
